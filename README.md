@@ -29,7 +29,7 @@
 ### 1. Клонируйте репозиторий
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/kb-template.git ~/Documents/MyKB
+git clone https://github.com/mdemyanov/kb-template.git ~/Documents/MyKB
 cd ~/Documents/MyKB
 ```
 
