@@ -215,20 +215,35 @@ aigrep index "{{VAULT_NAME}}" "{{VAULT_PATH}}"
 aigrep stats "{{VAULT_NAME}}"
 ```
 
-### 3.6 Skills (дополнительно)
+### 3.6 Skills (навыки для AI-ассистента)
 
-Скачай skills из репозитория (если доступны):
+Навыки загружаются из репозитория ai-assistants:
 
 ```bash
 # Создать папку для skills
 mkdir -p ~/.claude/skills
 
-# Скопировать skills (если есть доступ)
-# - meeting-prep
-# - meeting-debrief
-# - correspondence-2
-# - public-speaking
+# Клонировать репозиторий с навыками
+git clone https://github.com/mdemyanov/ai-assistants.git /tmp/ai-assistants
+
+# Скопировать нужные навыки
+cp -r /tmp/ai-assistants/skills/meeting-prep ~/.claude/skills/
+cp -r /tmp/ai-assistants/skills/meeting-debrief ~/.claude/skills/
+cp -r /tmp/ai-assistants/skills/correspondence-2 ~/.claude/skills/
+cp -r /tmp/ai-assistants/skills/public-speaking ~/.claude/skills/
+
+# Очистить временные файлы
+rm -rf /tmp/ai-assistants
+
+# Проверить установку
+ls ~/.claude/skills/
 ```
+
+Должны появиться папки:
+- `meeting-prep` — подготовка к встречам
+- `meeting-debrief` — постобработка встреч
+- `correspondence-2` — деловая переписка
+- `public-speaking` — подготовка выступлений
 
 ### 3.7 Настройка MCP
 
@@ -328,6 +343,7 @@ aigrep search "{{VAULT_NAME}}" "текущие приоритеты"
 - [ ] 60_DOMAIN/ адаптирован под роль
 - [ ] Ollama установлен и работает
 - [ ] aigrep установлен и vault проиндексирован
+- [ ] Skills загружены из github.com/mdemyanov/ai-assistants
 - [ ] MCP настроен в Claude Desktop
 - [ ] Vault открыт в Obsidian
 - [ ] Плагины Dataview и Templater установлены
