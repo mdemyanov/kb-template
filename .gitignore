@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Obsidian
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/plugins/
+.obsidian/core-plugins-migration.json
+.obsidian/community-plugins.json
+.obsidian/hotkeys.json
+.trash/
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Personal data (optional - uncomment if needed)
+# 10_PEOPLE/
+# 20_MEETINGS/
+# 30_PROJECTS/
+# 40_DECISIONS/journal/
+
+# Secrets
+.env
+.env.local
+*.key
+*.pem
+credentials.json
