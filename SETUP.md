@@ -168,18 +168,31 @@ which brew
 
 ### 3.2 Ollama (локальный сервер для AI-моделей)
 
+**Способ 1: Приложение (рекомендуется)**
+
+1. Скачайте установщик с [https://ollama.ai/download](https://ollama.ai/download)
+2. Установите приложение
+3. Запустите Ollama из Applications (запустится автоматически в фоне)
+
+**Способ 2: Homebrew**
+
 ```bash
 # Установка
 brew install ollama
 
-# Запуск сервера
-ollama serve &
+# Запуск как сервис (автозапуск)
+brew services start ollama
+```
 
-# Загрузка модели для embeddings
-ollama pull nomic-embed-text
+**Загрузка модели для embeddings:**
+
+```bash
+# Загрузить модель (обязательно)
+ollama pull mxbai-embed-large
 
 # Проверка
 ollama list
+# Должна быть видна модель mxbai-embed-large
 ```
 
 ### 3.3 UV (менеджер Python-пакетов)
@@ -199,20 +212,36 @@ uv --version
 
 ```bash
 # Установка
-uv tool install aigrep
+uv pip install aigrep
 
 # Проверка
-aigrep --version
+uv run aigrep --help
 ```
 
-### 3.5 Индексация vault
+### 3.5 Добавление vault в aigrep
+
+После настройки MCP (шаг 3.7) агент сможет сам добавить и проиндексировать vault.
+
+**Вариант 1: Через агента (рекомендуется)**
+
+После перезапуска Claude Desktop попросите агента:
+> "Добавь мой vault в aigrep: путь {{VAULT_PATH}}, имя {{VAULT_NAME}}"
+
+Агент выполнит через MCP-инструменты:
+- `add_vault_to_config("{{VAULT_PATH}}", "{{VAULT_NAME}}")` — добавит и проиндексирует
+- `vault_stats("{{VAULT_NAME}}")` — покажет статистику
+
+**Вариант 2: Через CLI (если MCP ещё не настроен)**
 
 ```bash
-# Создание индекса
-aigrep index "{{VAULT_NAME}}" "{{VAULT_PATH}}"
+# Добавление vault в конфигурацию
+uv run aigrep config add-vault --name "{{VAULT_NAME}}" --path "{{VAULT_PATH}}"
+
+# Индексация всех vault'ов
+uv run aigrep index-all
 
 # Проверка статистики
-aigrep stats "{{VAULT_NAME}}"
+uv run aigrep stats --vault "{{VAULT_NAME}}"
 ```
 
 ### 3.6 Skills (навыки для AI-ассистента)
@@ -254,20 +283,22 @@ Skills устанавливаются в проектную или пользо�
 git clone https://github.com/mdemyanov/ai-assistants.git /tmp/ai-assistants
 
 # Опция 1: Project-level (рекомендуется для команды)
-mkdir -p .github/skills
-cp -R /tmp/ai-assistants/skills/meeting-prep .github/skills/
-cp -R /tmp/ai-assistants/skills/meeting-debrief .github/skills/
-cp -R /tmp/ai-assistants/skills/correspondence-2 .github/skills/
+mkdir -p .claude/skills
+cp -R /tmp/ai-assistants/skills/meeting-prep .claude/skills/
+cp -R /tmp/ai-assistants/skills/meeting-debrief .claude/skills/
+cp -R /tmp/ai-assistants/skills/correspondence-2 .claude/skills/
 
 # Опция 2: User-level (для личного использования)
-mkdir -p ~/.copilot/skills
-cp -R /tmp/ai-assistants/skills/meeting-prep ~/.copilot/skills/
-cp -R /tmp/ai-assistants/skills/meeting-debrief ~/.copilot/skills/
-cp -R /tmp/ai-assistants/skills/correspondence-2 ~/.copilot/skills/
+mkdir -p ~/.claude/skills
+cp -R /tmp/ai-assistants/skills/meeting-prep ~/.claude/skills/
+cp -R /tmp/ai-assistants/skills/meeting-debrief ~/.claude/skills/
+cp -R /tmp/ai-assistants/skills/correspondence-2 ~/.claude/skills/
 
 # Очистить временные файлы
 rm -rf /tmp/ai-assistants
 ```
+
+> **Примечание:** Claude Code ищет skills в `.claude/skills/` (project-level) и `~/.claude/skills/` (user-level). Путь `.github/skills` не поддерживается.
 
 **Установленные навыки:**
 - `meeting-prep` — подготовка к встречам (`/prep`)
@@ -277,26 +308,18 @@ rm -rf /tmp/ai-assistants
 
 ### 3.7 Настройка MCP
 
-Создай конфиг для Claude Desktop:
-
-**Путь:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "aigrep": {
-      "command": "aigrep",
-      "args": ["mcp-server"],
-      "env": {
-        "AIGREP_EMBEDDING_PROVIDER": "ollama",
-        "AIGREP_EMBEDDING_MODEL": "nomic-embed-text"
-      }
-    }
-  }
-}
+```bash
+# Автоматическая настройка конфигурации Claude Desktop
+uv run aigrep claude-config --apply
 ```
 
-После установки попроси пользователя **перезапустить Claude Desktop** (Cmd+Q).
+> **ВАЖНО:** После выполнения команды **обязательно перезапустите Claude Desktop** (Cmd+Q → открыть заново). Без перезапуска агент не увидит новые MCP-инструменты aigrep.
+
+После перезапуска агент получит доступ к инструментам:
+- `search_vault` — семантический поиск
+- `add_vault_to_config` — добавление vault
+- `vault_stats` — статистика
+- `system_health` — диагностика
 
 ---
 
@@ -323,12 +346,27 @@ ls -la {{VAULT_PATH}}
 
 ### 4.2 Проверка aigrep
 
+**Через агента (рекомендуется):**
+
+Попросите агента:
+> "Проверь статус aigrep и покажи статистику vault {{VAULT_NAME}}"
+
+Агент выполнит:
+- `system_health()` — диагностика системы
+- `vault_stats("{{VAULT_NAME}}")` — статистика vault'а
+- `search_vault("{{VAULT_NAME}}", "текущие приоритеты")` — тестовый поиск
+
+**Через CLI:**
+
 ```bash
-# Статистика
-aigrep stats "{{VAULT_NAME}}"
+# Диагностика системы
+uv run aigrep doctor
+
+# Статистика vault'а
+uv run aigrep stats --vault "{{VAULT_NAME}}"
 
 # Тестовый поиск
-aigrep search "{{VAULT_NAME}}" "текущие приоритеты"
+uv run aigrep search --vault "{{VAULT_NAME}}" --query "текущие приоритеты"
 ```
 
 ### 4.3 Проверка MCP в Claude Desktop

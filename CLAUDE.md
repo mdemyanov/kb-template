@@ -18,12 +18,30 @@
 
 ### aigrep: семантический поиск
 
+**CLI (для терминала):**
+
 ```bash
 # Поиск по смыслу
-aigrep search "{{VAULT_NAME}}" "какие решения принимались по архитектуре"
+uv run aigrep search --vault "{{VAULT_NAME}}" --query "какие решения принимались по архитектуре"
 
 # Статистика vault
-aigrep stats "{{VAULT_NAME}}"
+uv run aigrep stats --vault "{{VAULT_NAME}}"
+```
+
+**MCP (для Claude Desktop/Code):**
+
+```
+# Поиск по смыслу
+search_vault: vault_name="{{VAULT_NAME}}", query="какие решения принимались по архитектуре"
+
+# Статистика vault
+vault_stats: vault_name="{{VAULT_NAME}}"
+
+# Поиск по типу документа
+search_vault: vault_name="{{VAULT_NAME}}", query="type:person"
+
+# Поиск по связям (WikiLinks)
+search_vault: vault_name="{{VAULT_NAME}}", query="links:person_id"
 ```
 
 ## При начале работы
@@ -45,13 +63,14 @@ aigrep stats "{{VAULT_NAME}}"
 | `50_KNOWLEDGE/` | Методологии, глоссарий |
 | `60_DOMAIN/` | Предметная область |
 | `90_TEMPLATES/` | Шаблоны документов |
+| `99_ARCHIVE/` | Архив завершённого |
 
 ## Типичные задачи
 
 | Задача | Действие |
 |--------|---------|
 | Консультация | Прочитать контекст → дать совет с альтернативами |
-| Поиск информации | `aigrep search "{{VAULT_NAME}}" "запрос"` |
+| Поиск информации | `uv run aigrep search --vault "{{VAULT_NAME}}" --query "запрос"` |
 | Создать ADR | Использовать `90_TEMPLATES/template_adr.md` → сохранить в `40_DECISIONS/adr/` |
 | Записать 1-1 | Использовать `90_TEMPLATES/template_1-1.md` → сохранить в `10_PEOPLE/{id}/1-1/` |
 | Новый проект | Использовать `90_TEMPLATES/template_project.md` → сохранить в `30_PROJECTS/active/{id}/` |
@@ -93,7 +112,20 @@ owner: ""    # WikiLink
 |---------|-------|-----------|
 | `/prep` | meeting-prep | Подготовка к встрече |
 | `/debrief` | meeting-debrief | Постобработка встречи |
-| `/letter` | correspondence-2 | Деловая переписка |
+| `/correspondence` | correspondence-2 | Деловая переписка |
+
+## Контекст для skills
+
+Параметры для автоматической конфигурации skills (meeting-prep, meeting-debrief и др.).
+
+| Параметр | Значение |
+|----------|----------|
+| vault_name | {{VAULT_NAME}} |
+| vault_tool | aigrep |
+| people_dir | 10_PEOPLE |
+| projects_dir | 30_PROJECTS/active |
+| committees_dir | 20_MEETINGS/committees |
+| templates_dir | 90_TEMPLATES |
 
 ## Правила
 
