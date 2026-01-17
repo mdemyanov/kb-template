@@ -303,7 +303,7 @@ rm -rf /tmp/ai-assistants
 **Установленные навыки:**
 - `meeting-prep` — подготовка к встречам (`/prep`)
 - `meeting-debrief` — постобработка встреч (`/debrief`)
-- `correspondence-2` — деловая переписка (`/letter`)
+- `correspondence-2` — деловая переписка (`/correspondence`)
 - `public-speaking` — подготовка выступлений
 
 ### 3.7 Настройка MCP
