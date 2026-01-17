@@ -5,6 +5,33 @@
 
 ---
 
+## Автоматическая установка (рекомендуется)
+
+Запустите скрипт для автоматической настройки всех компонентов:
+
+```bash
+./setup.sh
+```
+
+Скрипт автоматически:
+1. Проверит установку всех компонентов
+2. Установит недостающие (Homebrew, Ollama, UV, aigrep)
+3. Загрузит модель mxbai-embed-large для семантического поиска
+4. Установит skills из [GitHub Releases](https://github.com/mdemyanov/ai-assistants/releases)
+5. Проведёт персонализацию через интерактивное интервью
+6. Настроит vault в aigrep и MCP для Claude Desktop
+
+После завершения вам останется только:
+- Перезапустить Claude Desktop (Cmd+Q → открыть)
+- Открыть базу в Obsidian
+- Установить плагины Dataview и Templater
+
+---
+
+## Ручная установка
+
+Если вы предпочитаете ручную настройку, следуйте инструкциям ниже.
+
 ## Промт для Claude
 
 Скопируйте текст ниже и отправьте в Claude:
@@ -246,65 +273,47 @@ uv run aigrep stats --vault "{{VAULT_NAME}}"
 
 ### 3.6 Skills (навыки для AI-ассистента)
 
+Skills доступны в виде готовых zip-архивов на [GitHub Releases](https://github.com/mdemyanov/ai-assistants/releases).
+
 #### Для Claude Desktop (рекомендуемый способ)
 
-Skills устанавливаются через интерфейс приложения:
+1. Скачайте нужные skills с [последнего релиза](https://github.com/mdemyanov/ai-assistants/releases/latest):
+   - `correspondence-2.zip` — деловая переписка
+   - `meeting-debrief.zip` — постобработка встреч
 
-1. Клонируй репозиторий с навыками:
-```bash
-git clone https://github.com/mdemyanov/ai-assistants.git /tmp/ai-assistants
-```
-
-2. Создай zip-архивы для каждого skill:
-```bash
-cd /tmp/ai-assistants/skills
-
-# Создать архивы на рабочем столе
-zip -r ~/Desktop/meeting-prep.zip meeting-prep/
-zip -r ~/Desktop/meeting-debrief.zip meeting-debrief/
-zip -r ~/Desktop/correspondence-2.zip correspondence-2/
-zip -r ~/Desktop/public-speaking.zip public-speaking/
-```
-
-3. Откройй Claude Desktop → Settings → Skills → "Install skill" → выбери каждый zip-файл
-
-4. Очисти временные файлы:
-```bash
-rm -rf /tmp/ai-assistants
-rm ~/Desktop/meeting-*.zip ~/Desktop/correspondence-2.zip ~/Desktop/public-speaking.zip
-```
+2. Claude Desktop → Settings → Skills → "Install skill" → выберите скачанный zip-файл
 
 #### Для Claude Code
 
-Skills устанавливаются в проектную или пользовательскую директорию:
+Скачайте и распакуйте skills из релиза:
 
 ```bash
-# Клонировать репозиторий
-git clone https://github.com/mdemyanov/ai-assistants.git /tmp/ai-assistants
+# Получить версию последнего релиза
+LATEST=$(curl -s https://api.github.com/repos/mdemyanov/ai-assistants/releases/latest | grep tag_name | cut -d'"' -f4)
 
-# Опция 1: Project-level (рекомендуется для команды)
-mkdir -p .claude/skills
-cp -R /tmp/ai-assistants/skills/meeting-prep .claude/skills/
-cp -R /tmp/ai-assistants/skills/meeting-debrief .claude/skills/
-cp -R /tmp/ai-assistants/skills/correspondence-2 .claude/skills/
+# Базовый URL
+BASE_URL="https://github.com/mdemyanov/ai-assistants/releases/download/${LATEST}"
 
-# Опция 2: User-level (для личного использования)
+# Создать директорию для skills
 mkdir -p ~/.claude/skills
-cp -R /tmp/ai-assistants/skills/meeting-prep ~/.claude/skills/
-cp -R /tmp/ai-assistants/skills/meeting-debrief ~/.claude/skills/
-cp -R /tmp/ai-assistants/skills/correspondence-2 ~/.claude/skills/
+
+# Скачать и распаковать correspondence-2
+curl -L -o /tmp/correspondence-2.zip "${BASE_URL}/correspondence-2.zip"
+unzip -o /tmp/correspondence-2.zip -d ~/.claude/skills/
+
+# Скачать и распаковать meeting-debrief
+curl -L -o /tmp/meeting-debrief.zip "${BASE_URL}/meeting-debrief.zip"
+unzip -o /tmp/meeting-debrief.zip -d ~/.claude/skills/
 
 # Очистить временные файлы
-rm -rf /tmp/ai-assistants
+rm /tmp/correspondence-2.zip /tmp/meeting-debrief.zip
 ```
 
-> **Примечание:** Claude Code ищет skills в `.claude/skills/` (project-level) и `~/.claude/skills/` (user-level). Путь `.github/skills` не поддерживается.
+> **Примечание:** Claude Code ищет skills в `.claude/skills/` (project-level) и `~/.claude/skills/` (user-level).
 
-**Установленные навыки:**
-- `meeting-prep` — подготовка к встречам (`/prep`)
-- `meeting-debrief` — постобработка встреч (`/debrief`)
+**Доступные навыки:**
 - `correspondence-2` — деловая переписка (`/correspondence`)
-- `public-speaking` — подготовка выступлений
+- `meeting-debrief` — постобработка встреч (`/debrief`)
 
 ### 3.7 Настройка MCP
 

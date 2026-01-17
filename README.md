@@ -33,19 +33,32 @@ git clone https://github.com/mdemyanov/kb-template.git ~/Documents/MyKB
 cd ~/Documents/MyKB
 ```
 
-### 2. Персонализируйте базу
-
-Откройте `SETUP.md` в Claude Desktop или Claude Code и следуйте инструкциям. AI проведёт вас через:
-- Интервью о вашей роли и контексте
-- Замену плейсхолдеров в файлах
-- Установку инструментов
-- Верификацию настройки
-
-### 3. Откройте в Obsidian
+### 2. Запустите скрипт установки
 
 ```bash
-# Obsidian → Open folder as vault → выберите папку с базой
+./setup.sh
 ```
+
+Скрипт автоматически установит все компоненты и проведёт персонализацию через интерактивное интервью.
+
+<details>
+<summary>Что делает скрипт</summary>
+
+1. Проверяет и устанавливает Xcode CLI Tools, Homebrew
+2. Устанавливает Ollama и загружает модель для семантического поиска
+3. Устанавливает UV и aigrep
+4. Скачивает skills из [GitHub Releases](https://github.com/mdemyanov/ai-assistants/releases)
+5. Персонализирует базу через интервью
+6. Настраивает vault и MCP для Claude Desktop
+
+</details>
+
+### 3. Завершите настройку
+
+После скрипта:
+- Перезапустите Claude Desktop (Cmd+Q → открыть)
+- Откройте базу в Obsidian
+- Установите плагины Dataview и Templater
 
 ## Требования
 
