@@ -217,32 +217,62 @@ aigrep stats "{{VAULT_NAME}}"
 
 ### 3.6 Skills (навыки для AI-ассистента)
 
-Навыки загружаются из репозитория ai-assistants:
+#### Для Claude Desktop (рекомендуемый способ)
+
+Skills устанавливаются через интерфейс приложения:
+
+1. Клонируй репозиторий с навыками:
+```bash
+git clone https://github.com/mdemyanov/ai-assistants.git /tmp/ai-assistants
+```
+
+2. Создай zip-архивы для каждого skill:
+```bash
+cd /tmp/ai-assistants/skills
+
+# Создать архивы на рабочем столе
+zip -r ~/Desktop/meeting-prep.zip meeting-prep/
+zip -r ~/Desktop/meeting-debrief.zip meeting-debrief/
+zip -r ~/Desktop/correspondence-2.zip correspondence-2/
+zip -r ~/Desktop/public-speaking.zip public-speaking/
+```
+
+3. Откройй Claude Desktop → Settings → Skills → "Install skill" → выбери каждый zip-файл
+
+4. Очисти временные файлы:
+```bash
+rm -rf /tmp/ai-assistants
+rm ~/Desktop/meeting-*.zip ~/Desktop/correspondence-2.zip ~/Desktop/public-speaking.zip
+```
+
+#### Для Claude Code
+
+Skills устанавливаются в проектную или пользовательскую директорию:
 
 ```bash
-# Создать папку для skills
-mkdir -p ~/.claude/skills
-
-# Клонировать репозиторий с навыками
+# Клонировать репозиторий
 git clone https://github.com/mdemyanov/ai-assistants.git /tmp/ai-assistants
 
-# Скопировать нужные навыки
-cp -r /tmp/ai-assistants/skills/meeting-prep ~/.claude/skills/
-cp -r /tmp/ai-assistants/skills/meeting-debrief ~/.claude/skills/
-cp -r /tmp/ai-assistants/skills/correspondence-2 ~/.claude/skills/
-cp -r /tmp/ai-assistants/skills/public-speaking ~/.claude/skills/
+# Опция 1: Project-level (рекомендуется для команды)
+mkdir -p .github/skills
+cp -R /tmp/ai-assistants/skills/meeting-prep .github/skills/
+cp -R /tmp/ai-assistants/skills/meeting-debrief .github/skills/
+cp -R /tmp/ai-assistants/skills/correspondence-2 .github/skills/
+
+# Опция 2: User-level (для личного использования)
+mkdir -p ~/.copilot/skills
+cp -R /tmp/ai-assistants/skills/meeting-prep ~/.copilot/skills/
+cp -R /tmp/ai-assistants/skills/meeting-debrief ~/.copilot/skills/
+cp -R /tmp/ai-assistants/skills/correspondence-2 ~/.copilot/skills/
 
 # Очистить временные файлы
 rm -rf /tmp/ai-assistants
-
-# Проверить установку
-ls ~/.claude/skills/
 ```
 
-Должны появиться папки:
-- `meeting-prep` — подготовка к встречам
-- `meeting-debrief` — постобработка встреч
-- `correspondence-2` — деловая переписка
+**Установленные навыки:**
+- `meeting-prep` — подготовка к встречам (`/prep`)
+- `meeting-debrief` — постобработка встреч (`/debrief`)
+- `correspondence-2` — деловая переписка (`/letter`)
 - `public-speaking` — подготовка выступлений
 
 ### 3.7 Настройка MCP
