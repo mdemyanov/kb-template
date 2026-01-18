@@ -25,11 +25,11 @@ readonly SKILLS_REPO="mdemyanov/ai-assistants"
 readonly SKILLS_TO_INSTALL=("correspondence-2" "meeting-debrief")
 
 # Global variables for user data
-declare -g USER_ROLE=""
-declare -g USER_COMPANY=""
-declare -g USER_AREAS=""
-declare -g VAULT_NAME=""
-declare -g VAULT_PATH=""
+USER_ROLE=""
+USER_COMPANY=""
+USER_AREAS=""
+VAULT_NAME=""
+VAULT_PATH=""
 
 # =============================================================================
 # UTILITY FUNCTIONS
