@@ -331,7 +331,14 @@ install_uv() {
 install_aigrep() {
     print_info "Установка aigrep..."
 
-    uv pip install aigrep
+    # Современный синтаксис UV для установки инструментов
+    if uv tool install aigrep 2>/dev/null; then
+        :  # Success
+    elif uv pip install --system aigrep 2>/dev/null; then
+        :  # Fallback to older syntax
+    else
+        uv pip install aigrep  # Original fallback
+    fi
 
     if check_aigrep; then
         print_success "aigrep установлен"
@@ -344,12 +351,33 @@ install_aigrep() {
 
 get_latest_release() {
     local repo="$1"
-    curl -s "https://api.github.com/repos/${repo}/releases/latest" | grep '"tag_name"' | cut -d'"' -f4
+    local response
+
+    # Добавить таймауты и более надёжный парсинг
+    response=$(curl -s --connect-timeout 10 --max-time 30 \
+        "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null)
+
+    if [[ -z "$response" ]]; then
+        print_error "Не удалось получить данные из GitHub API"
+        return 1
+    fi
+
+    # Проверить rate limit
+    if echo "$response" | grep -q "rate limit exceeded"; then
+        print_error "Превышен лимит GitHub API. Попробуйте позже."
+        return 1
+    fi
+
+    echo "$response" | grep '"tag_name"' | head -1 | cut -d'"' -f4
 }
 
 install_skills_from_release() {
     local skills_dir="$HOME/.claude/skills"
-    local temp_dir="/tmp/kb-skills-$$"
+    local temp_dir
+    temp_dir=$(mktemp -d) || {
+        print_error "Не удалось создать временную директорию"
+        return 1
+    }
 
     print_info "Получение последней версии skills..."
 
@@ -358,6 +386,7 @@ install_skills_from_release() {
 
     if [[ -z "$latest" ]]; then
         print_error "Не удалось получить версию релиза"
+        rm -rf "$temp_dir"
         return 1
     fi
 
@@ -420,77 +449,100 @@ configure_mcp() {
 # =============================================================================
 
 collect_user_data() {
-    print_header "Персонализация базы знаний"
+    local confirmed=false
 
-    echo -e "${DIM}Ответьте на несколько вопросов для настройки базы под вашу роль.${NC}"
-    echo ""
+    while ! $confirmed; do
+        print_header "Персонализация базы знаний"
 
-    # Role
-    echo -e "${BOLD}Вопрос 1/3: Должность${NC}"
-    echo "  1) CTO"
-    echo "  2) CPO"
-    echo "  3) COO"
-    echo "  4) HR Director"
-    echo "  5) Product Manager"
-    echo "  6) Другое"
-    echo ""
+        echo -e "${DIM}Ответьте на несколько вопросов для настройки базы под вашу роль.${NC}"
+        echo ""
 
-    local role_choice
-    read -rp "  Выберите [1-6]: " role_choice
+        # Role
+        echo -e "${BOLD}Вопрос 1/3: Должность${NC}"
+        echo "  1) CTO"
+        echo "  2) CPO"
+        echo "  3) COO"
+        echo "  4) HR Director"
+        echo "  5) Product Manager"
+        echo "  6) Другое"
+        echo ""
 
-    case "$role_choice" in
-        1) USER_ROLE="CTO" ;;
-        2) USER_ROLE="CPO" ;;
-        3) USER_ROLE="COO" ;;
-        4) USER_ROLE="HR Director" ;;
-        5) USER_ROLE="Product Manager" ;;
-        6) read -rp "  Введите должность: " USER_ROLE ;;
-        *) USER_ROLE="CTO"; print_warning "Выбрано по умолчанию: CTO" ;;
-    esac
-    echo ""
+        local role_choice
+        read -rp "  Выберите [1-6]: " role_choice
 
-    # Company
-    echo -e "${BOLD}Вопрос 2/3: Компания${NC}"
-    read -rp "  Название компании: " USER_COMPANY
-    echo ""
+        case "$role_choice" in
+            1) USER_ROLE="CTO" ;;
+            2) USER_ROLE="CPO" ;;
+            3) USER_ROLE="COO" ;;
+            4) USER_ROLE="HR Director" ;;
+            5) USER_ROLE="Product Manager" ;;
+            6)
+                read -rp "  Введите должность: " USER_ROLE
+                while [[ -z "$USER_ROLE" ]]; do
+                    print_warning "Должность не может быть пустой"
+                    read -rp "  Введите должность: " USER_ROLE
+                done
+                ;;
+            *) USER_ROLE="CTO"; print_warning "Выбрано по умолчанию: CTO" ;;
+        esac
+        echo ""
 
-    # Areas
-    echo -e "${BOLD}Вопрос 3/3: Области ответственности${NC}"
-    echo -e "  ${DIM}Пример: технологическая стратегия, архитектура, команды${NC}"
-    read -rp "  Введите через запятую: " USER_AREAS
-    echo ""
+        # Company
+        echo -e "${BOLD}Вопрос 2/3: Компания${NC}"
+        read -rp "  Название компании: " USER_COMPANY
 
-    # Generate vault name and path
-    local company_slug
-    company_slug=$(echo "$USER_COMPANY" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
-    local role_slug
-    role_slug=$(echo "$USER_ROLE" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
-    VAULT_NAME="${company_slug}-${role_slug}"
+        while [[ -z "$USER_COMPANY" ]]; do
+            print_warning "Название компании не может быть пустым"
+            read -rp "  Название компании: " USER_COMPANY
+        done
+        echo ""
 
-    local company_formatted
-    company_formatted=$(echo "$USER_COMPANY" | tr ' ' '_')
-    local role_formatted
-    role_formatted=$(echo "$USER_ROLE" | tr ' ' '_')
-    VAULT_PATH="$HOME/Documents/${company_formatted}_${role_formatted}"
+        # Areas
+        echo -e "${BOLD}Вопрос 3/3: Области ответственности${NC}"
+        echo -e "  ${DIM}Пример: технологическая стратегия, архитектура, команды${NC}"
+        read -rp "  Введите через запятую: " USER_AREAS
 
-    # Summary
-    echo ""
-    echo -e "${BOLD}Сводка:${NC}"
-    echo -e "  ${CYAN}Роль:${NC}         $USER_ROLE"
-    echo -e "  ${CYAN}Компания:${NC}     $USER_COMPANY"
-    echo -e "  ${CYAN}Области:${NC}      $USER_AREAS"
-    echo -e "  ${CYAN}Vault name:${NC}   $VAULT_NAME"
-    echo -e "  ${CYAN}Vault path:${NC}   $VAULT_PATH"
-    echo ""
+        while [[ -z "$USER_AREAS" ]]; do
+            print_warning "Области ответственности не могут быть пустыми"
+            read -rp "  Введите через запятую: " USER_AREAS
+        done
+        echo ""
 
-    if ! confirm "Всё верно?"; then
-        print_info "Начинаем заново..."
-        collect_user_data
-    fi
+        # Generate vault name and path
+        local company_slug
+        company_slug=$(echo "$USER_COMPANY" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+        local role_slug
+        role_slug=$(echo "$USER_ROLE" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+        VAULT_NAME="${company_slug}-${role_slug}"
+
+        local company_formatted
+        company_formatted=$(echo "$USER_COMPANY" | tr ' ' '_')
+        local role_formatted
+        role_formatted=$(echo "$USER_ROLE" | tr ' ' '_')
+        VAULT_PATH="$HOME/Documents/${company_formatted}_${role_formatted}"
+
+        # Summary
+        echo ""
+        echo -e "${BOLD}Сводка:${NC}"
+        echo -e "  ${CYAN}Роль:${NC}         $USER_ROLE"
+        echo -e "  ${CYAN}Компания:${NC}     $USER_COMPANY"
+        echo -e "  ${CYAN}Области:${NC}      $USER_AREAS"
+        echo -e "  ${CYAN}Vault name:${NC}   $VAULT_NAME"
+        echo -e "  ${CYAN}Vault path:${NC}   $VAULT_PATH"
+        echo ""
+
+        if confirm "Всё верно?"; then
+            confirmed=true
+        else
+            print_info "Начинаем заново..."
+            echo ""
+        fi
+    done
 }
 
 escape_for_sed() {
-    printf '%s\n' "$1" | sed 's/[&/\]/\\&/g'
+    # Экранирование для sed с разделителем |
+    printf '%s\n' "$1" | sed 's/[&|\]/\\&/g'
 }
 
 replace_placeholders_in_file() {
@@ -510,12 +562,12 @@ replace_placeholders_in_file() {
     today=$(date +%Y-%m-%d)
 
     sed -i '' \
-        -e "s/{{ROLE}}/${safe_role}/g" \
-        -e "s/{{COMPANY}}/${safe_company}/g" \
-        -e "s/{{AREAS}}/${safe_areas}/g" \
-        -e "s/{{VAULT_NAME}}/${safe_vault_name}/g" \
+        -e "s|{{ROLE}}|${safe_role}|g" \
+        -e "s|{{COMPANY}}|${safe_company}|g" \
+        -e "s|{{AREAS}}|${safe_areas}|g" \
+        -e "s|{{VAULT_NAME}}|${safe_vault_name}|g" \
         -e "s|{{VAULT_PATH}}|${safe_vault_path}|g" \
-        -e "s/{{date}}/${today}/g" \
+        -e "s|{{date}}|${today}|g" \
         "$file"
 
     print_success "Обновлён: $(basename "$file")"
@@ -727,8 +779,15 @@ main() {
 
     if [[ "$SCRIPT_DIR" != "$VAULT_PATH" ]]; then
         print_info "Копирование базы в $VAULT_PATH..."
-        mkdir -p "$(dirname "$VAULT_PATH")"
-        cp -R "$SCRIPT_DIR" "$VAULT_PATH"
+        mkdir -p "$VAULT_PATH"
+
+        # Копировать только нужные директории и файлы, исключая служебные
+        find "$SCRIPT_DIR" -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name 'setup.sh' \
+            ! -name '.DS_Store' \
+            ! -name 'tests' \
+            -exec cp -R {} "$VAULT_PATH/" \;
     fi
 
     print_info "Персонализация файлов..."
