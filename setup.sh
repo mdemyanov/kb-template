@@ -81,8 +81,9 @@ confirm() {
 
     read -r answer
     answer=${answer:-$default}
+    answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]')
 
-    [[ "${answer,,}" == "y" || "${answer,,}" == "yes" ]]
+    [[ "$answer" == "y" || "$answer" == "yes" ]]
 }
 
 wait_for_enter() {

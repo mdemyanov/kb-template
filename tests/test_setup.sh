@@ -202,6 +202,75 @@ test_placeholder_patterns() {
     fi
 }
 
+test_confirm_function() {
+    print_test_header "Test: confirm() Function (Bash 3.2 compatibility)"
+
+    # Define a test version of confirm function (copied from setup.sh)
+    # Simplified for testing - no prompt output
+    confirm_test() {
+        local answer
+        read -r answer
+        answer=${answer:-y}
+        answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]')
+
+        [[ "$answer" == "y" || "$answer" == "yes" ]]
+    }
+
+    # Test 1: Lowercase 'y' should return true
+    if echo "y" | confirm_test; then
+        echo -e "  ${GREEN}✓${NC} PASS: Lowercase 'y' should be accepted"
+        ((TESTS_PASSED++))
+    else
+        echo -e "  ${RED}✗${NC} FAIL: Lowercase 'y' should be accepted"
+        ((TESTS_FAILED++))
+    fi
+
+    # Test 2: Uppercase 'Y' should return true (after tr conversion)
+    if echo "Y" | confirm_test; then
+        echo -e "  ${GREEN}✓${NC} PASS: Uppercase 'Y' should be accepted"
+        ((TESTS_PASSED++))
+    else
+        echo -e "  ${RED}✗${NC} FAIL: Uppercase 'Y' should be accepted"
+        ((TESTS_FAILED++))
+    fi
+
+    # Test 3: Lowercase 'yes' should return true
+    if echo "yes" | confirm_test; then
+        echo -e "  ${GREEN}✓${NC} PASS: Lowercase 'yes' should be accepted"
+        ((TESTS_PASSED++))
+    else
+        echo -e "  ${RED}✗${NC} FAIL: Lowercase 'yes' should be accepted"
+        ((TESTS_FAILED++))
+    fi
+
+    # Test 4: Uppercase 'YES' should return true (after tr conversion)
+    if echo "YES" | confirm_test; then
+        echo -e "  ${GREEN}✓${NC} PASS: Uppercase 'YES' should be accepted"
+        ((TESTS_PASSED++))
+    else
+        echo -e "  ${RED}✗${NC} FAIL: Uppercase 'YES' should be accepted"
+        ((TESTS_FAILED++))
+    fi
+
+    # Test 5: Mixed case 'Yes' should return true (after tr conversion)
+    if echo "Yes" | confirm_test; then
+        echo -e "  ${GREEN}✓${NC} PASS: Mixed case 'Yes' should be accepted"
+        ((TESTS_PASSED++))
+    else
+        echo -e "  ${RED}✗${NC} FAIL: Mixed case 'Yes' should be accepted"
+        ((TESTS_FAILED++))
+    fi
+
+    # Test 6: 'n' should return false
+    if echo "n" | confirm_test; then
+        echo -e "  ${RED}✗${NC} FAIL: Lowercase 'n' should be rejected"
+        ((TESTS_FAILED++))
+    else
+        echo -e "  ${GREEN}✓${NC} PASS: Lowercase 'n' should be rejected"
+        ((TESTS_PASSED++))
+    fi
+}
+
 # =============================================================================
 # MAIN TEST RUNNER
 # =============================================================================
@@ -225,6 +294,7 @@ main() {
     test_vault_path_generation
     test_sed_replacement_safety
     test_placeholder_patterns
+    test_confirm_function
 
     # Summary
     echo ""
