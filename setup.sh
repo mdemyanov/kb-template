@@ -155,7 +155,7 @@ check_uv() {
 }
 
 check_aigrep() {
-    uv run aigrep --version &> /dev/null 2>&1
+    uv run aigrep version &> /dev/null 2>&1
 }
 
 check_skills_installed() {
